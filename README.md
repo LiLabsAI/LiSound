@@ -1,9 +1,8 @@
 # Sovate
 
-A system-wide audio equalizer and volume booster for macOS (Apple Silicon), modeled on the
-open-source [FxSound](https://github.com/fxsound2/fxsound-app) app for Windows. Written from
-scratch in Swift/SwiftUI under the **Sovate** brand — preset *data* is ported from FxSound
-(AGPL v3), no FxSound code.
+A system-wide audio equalizer and volume booster for macOS (Apple Silicon).
+Written from scratch in Swift/SwiftUI — pure black & golden UI, real-time DSP, no drivers
+to install.
 
 Sovate lives in your menu bar, processes **all** system audio in real time, and renders it
 to whatever output device you choose — with a pure black/golden UI.
@@ -27,9 +26,8 @@ Power off destroys the tap and normal system audio resumes instantly.
 ## Features
 
 - **Power on/off** with mute-safe teardown; audio returns to normal the instant you power off
-- **13 built-in presets** ported from FxSound (Default, Music, Voice, Volume Boost, Bass
-  Boost, Gaming, Movies, TV, Transcription, …) with FxSound's exact band frequencies and
-  decoded effect values
+- **13 built-in presets** (Default, Music, Voice, Volume Boost, Bass Boost, Gaming, Movies,
+  TV, Transcription, …) with tuned band frequencies and effect values
 - **Custom presets**: the first edit detaches into a rolling "Custom" scratch — factory
   presets stay pristine. Save As New / Overwrite / Undo / Delete; presets export and import
   as shareable JSON files
@@ -81,7 +79,7 @@ Tests/run_logic_tests.sh        # 70 checks; exits non-zero on failure
 
 - `plan/` — research and implementation plans (plan1–plan9) with status log
 - `sovate/Audio/` — tap, aggregate device, ring buffer, spectrum analyzer, DSP engine, device manager
-- `sovate/Presets/` — preset model/store + built-in preset data (generated from FxSound `.fac`)
+- `sovate/Presets/` — preset model/store + built-in preset data
 - `sovate/Core/` — app state, controller, settings
 - `sovate/App/` — SwiftUI views (Lite/Pro, menu bar, settings, theme)
 - `sovate/Platform/` — hotkeys, login item, permissions

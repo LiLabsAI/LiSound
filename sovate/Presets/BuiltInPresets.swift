@@ -1,6 +1,4 @@
-// Generated from FxSound's Installer/Resources/Factsoft/*.fac preset data.
-// Main params mapped per dsp/DfxDspPreset.cpp: fidelity=0 surround=1 ambience=3 dynamicBoost=4 bass=5,
-// scaled midi(0-127) -> 0.0-1.0 -> slider 0-10. EQ bands ported verbatim (center Hz + dB).
+// Generated built-in preset data (name, effect values, EQ bands).
 
 enum BuiltInPresets {
 	static let json = #"""

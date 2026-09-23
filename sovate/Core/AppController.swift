@@ -76,8 +76,7 @@ final class AppController {
 
         registerHotkeys()
 
-        // FxSound (Windows) CLI parity: --preset=<name>, --set-band-gain=<index>:<dB>,
-        // --power=<0|1>, --view=<1|2>.
+        // CLI parity: --preset=<name>, --set-band-gain=<index>:<dB>, --power=<0|1>, --view=<1|2>.
         let arguments = ProcessInfo.processInfo.arguments
         for arg in arguments {
             if arg.hasPrefix("--preset=") {

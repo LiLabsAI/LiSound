@@ -25,7 +25,6 @@ final class PresetStore {
     init(directoryOverride: URL? = nil) {
         self.directoryOverride = directoryOverride
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        removeLegacyOverrideFolder()
         loadBuiltIns()
         loadUserPresets()
     }
@@ -145,16 +144,5 @@ final class PresetStore {
 
     func resetBuiltIns() {
         loadBuiltIns()
-    }
-
-    /// One-time cleanup: the removed built-in-override feature left files behind.
-    private func removeLegacyOverrideFolder() {
-        if let directoryOverride {
-            try? fileManager.removeItem(at: directoryOverride.appendingPathComponent(Self.legacyOverridesFolderName))
-            return
-        }
-        let legacy = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("FxSound/\(Self.legacyOverridesFolderName)", isDirectory: true)
-        try? fileManager.removeItem(at: legacy)
     }
 }
