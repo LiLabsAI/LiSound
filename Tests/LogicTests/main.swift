@@ -197,28 +197,77 @@ func testAuditFixes() {
         let mid = resampled[4].gain
         check(abs(mid - 0) < 2, "resample interpolates the middle of a -12→12 ramp (got \(mid))")
 
-        // built-in override persistence + reset
+        // Custom scratch lifecycle: edits detach into one rolling "Custom" slot
         let temp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("fxsound-overrides-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("fxsound-custom-\(UUID().uuidString)", isDirectory: true)
         let store = PresetStore(directoryOverride: temp)
-        let musicID = store.builtIns.first { $0.name == "Music" }!.id
-        var edited = store.builtIns.first { $0.name == "Music" }!
-        edited.effects.bass = 9
-        edited.bands[0].gain = 6
-        store.saveBuiltInOverride(edited)
+        let music = store.builtIns.first { $0.name == "Music" }!
+        let custom1 = store.createOrResetCustom(values: music)
+        check(custom1.name == PresetStore.customScratchName, "scratch named Custom")
+        check(abs(custom1.effects.bass - 4.72) < 0.01, "scratch starts from source preset values")
+        let custom2 = store.createOrResetCustom(values: Preset(name: "x", isBuiltIn: false))
+        check(custom2.id == custom1.id, "scratch reuses the same Custom slot (no preset spam)")
 
         let reloaded = PresetStore(directoryOverride: temp)
-        let reloadedMusic = reloaded.builtIns.first { $0.name == "Music" }!
-        check(abs(reloadedMusic.effects.bass - 9) < 0.01, "built-in override survives reload")
-        check(reloadedMusic.bands[0].gain == 6, "built-in override bands survive reload")
-        check(reloaded.builtIns.count == 13, "override does not duplicate the preset")
+        check(reloaded.userPresets.contains { $0.id == custom1.id }, "Custom scratch persists")
 
-        reloaded.deleteAllBuiltInOverrides()
-        let factory = PresetStore(directoryOverride: temp)
-        let factoryMusic = factory.builtIns.first { $0.name == "Music" }!
-        check(abs(factoryMusic.effects.bass - 4.72) < 0.01, "reset restores factory values")
+        // built-ins stay factory-immutable under the Custom model
+        let factoryMusic = reloaded.builtIns.first { $0.name == "Music" }!
+        check(abs(factoryMusic.effects.bass - 4.72) < 0.01, "built-ins stay factory after Custom created")
+
+        // import from an exported JSON file with name-collision handling
+        let exportURL = temp.appendingPathComponent("export.json")
+        var exportPreset = Preset(name: "Music", isBuiltIn: false, effects: EffectValues(bass: 8))
+        exportPreset.bands = [PresetBand(frequency: 100, gain: 5)]
+        if let data = try? JSONEncoder().encode(exportPreset) {
+            try? data.write(to: exportURL)
+        }
+        let imported = reloaded.importPreset(from: exportURL)
+        check(imported != nil, "import succeeds from valid JSON file")
+        check(imported?.name == "Music 2", "imported name uniqued against existing (got \(imported?.name ?? "nil"))")
+        check(imported?.effects.bass == 8, "imported preset keeps its values")
+        let afterImport = PresetStore(directoryOverride: temp)
+        check(afterImport.userPresets.contains { $0.name == "Music 2" && $0.effects.bass == 8 },
+              "imported preset persists to disk")
         try? FileManager.default.removeItem(at: temp)
     }
+}
+
+// MARK: - SpectrumBars (fixed-stick visualizer feed)
+
+func testSpectrumBars() {
+    print("SpectrumBars")
+    let sr: Float = 48000
+    let bars = SpectrumBars(sampleRate: sr)
+    check(bars.snapshot().count == 128, "128 bands")
+    check(bars.snapshot().allSatisfy { $0 == 0 }, "starts silent")
+
+    // feed a loud 1 kHz sine (~40 ms across callbacks, fills the 2048 window)
+    let frames = 512
+    let l = UnsafeMutablePointer<Float>.allocate(capacity: frames)
+    let r = UnsafeMutablePointer<Float>.allocate(capacity: frames)
+    defer { l.deallocate(); r.deallocate() }
+    var phase: Float = 0
+    let phaseInc = Float(2 * Double.pi * 1000 / 48000)
+    for _ in 0..<8 {
+        for i in 0..<frames {
+            l[i] = 0.5 * sin(phase)
+            r[i] = l[i]
+            phase += phaseInc
+            if phase > 2 * Float.pi { phase -= 2 * Float.pi }
+        }
+        bars.analyze(left: l, right: r, frames: frames, sampleRate: sr)
+    }
+    let snap = bars.snapshot()
+    check(snap.count == 128, "snapshot has 128 bands")
+    check(bars.peakLevel > 0.8, "1 kHz tone drives its band high (peak \(bars.peakLevel))")
+    check(snap[0] < 0.05, "sub-80 Hz bands stay dark for a 1 kHz tone (got \(snap[0]))")
+    let highs = Array(snap.suffix(24)) // top ~2.9k-16k bands
+    check((highs.max() ?? 1) < 0.6, "high bands stay low for a 1 kHz tone (max \((highs.max() ?? 0)))")
+    check(bars.peakLevel == snap.max()!, "peakLevel matches snapshot max")
+
+    let fresh = SpectrumBars(sampleRate: sr)
+    check(fresh.snapshot().allSatisfy { $0 == 0 }, "fresh analyzer starts silent")
 }
 
 // MARK: - SettingsStore
@@ -242,6 +291,7 @@ testEQParameters()
 testRenderDSP()
 testPresets()
 testSettings()
+testSpectrumBars()
 testAuditFixes()
 
 print("\n\(checks) checks, \(failures) failures")

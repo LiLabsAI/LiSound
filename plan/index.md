@@ -1,11 +1,12 @@
-# FxSound for Mac — Master Plan
+# Sovate — Master Plan (formerly FxSound for Mac)
 
 A system-wide audio equalizer & sound booster for Mac (Apple Silicon), modeled on the
 open-source Windows app [FxSound](https://github.com/fxsound2/fxsound-app).
 
 - **Target machine:** Mac Mini M4 (Apple Silicon, macOS 14.4+ required for the audio-capture API; repo currently targets a newer SDK).
-- **Local project:** `/Volumes/essd/build/apps/fxSound/fxsound` — a fresh SwiftUI Xcode project
-  (`fxsound.xcodeproj`, bundle id `com.aliahad.fxsound`, Swift 5, currently a "Hello, world" template).
+- **Local project:** `/Volumes/essd/build/apps/fxSound/fxsound` — SwiftUI Xcode project
+  (`sovate.xcodeproj`, bundle id `com.aliahad.sovate`, target/folder `sovate`; renamed from
+  `fxsound` in the 2026-09-24 rebrand).
 - **Reference repo cloned for research:** `/tmp/fxsound-app` (fxsound2/fxsound-app, C++/JUCE, AGPL v3).
 - **License note:** FxSound is AGPL v3. This Mac app is written from scratch in Swift — we port
   *concepts, parameter values and preset data* (data is not copyrightable), **not** C++ source.
@@ -174,6 +175,95 @@ Fallback for older macOS: the BlackHole loopback driver (documented in plan2.md,
   - Tests: 57/57 pass (added: stable-ID determinism, resample curve preservation, built-in
     override persistence + reset). Runtime verified: SIGTERM teardown, graceful quit,
     chain start + self-test pass.
+- 2026-09-24 — **UI iteration 2 (user feedback): tray ticks + beat-sensitive waveform.**
+  - Tray menu: active preset/output now marked with a leading `✓` (text tick — macOS 26
+    strips SF Symbol images from menu labels), full 13-preset list shown (was first-8-only).
+  - Output list filtered: the app's own private aggregate and transient
+    `CADefaultDeviceAggregate-*` / aggregate-transport devices no longer appear (verified via
+    device probe: only real outputs listed).
+  - Visualizer rewritten: the 10-band FFT spectrum is replaced by a 192-slot amplitude
+    history (`AmplitudeMeter`) fed per render callback (~10.7 ms/slot ≈ 2 s of history) —
+    drawn as ~190 thin mirrored sticks matching the user's reference. Peaks catch beats and
+    syllables and fall away between them (the old spectrum stayed high for any continuous
+    content); noise gate below 0.03, peak compression ×2.4/^0.65 for quiet-speech
+    visibility. Verified live with a pulsing beat tone (screenshot) and
+    `amplitude=1.000000` on beats / 0.0 between.
+  - Tests: 63/63 pass (added AmplitudeMeter ring-order, compression and noise-gate checks).
+- 2026-09-24 — **UI iteration 3 (user feedback): fixed dancing sticks, tray ticks, clean device list.**
+  - Visualizer redesigned from a scrolling amplitude history to **fixed thin sticks that
+    dance up/down in place**: 128 log-spaced frequency bands from a 2048-point Hann FFT
+    (`SpectrumBars`), fixed dB mapping (−30 → 0, +15 → 1) with fast attack (~15 ms) / slow
+    release (~140 ms) so beats spike per band and fall between them — beats pump the bass
+    sticks, consonants flutter the treble sticks. Replaced the scrolling history the user
+    rejected and the "always high" 10-band spectrum before it.
+  - Tray menu: active preset/output marked with a leading `✓` (text tick — macOS 26 strips
+    SF Symbol images from menu labels); full 13-preset list shown; the app's own private
+    aggregate and transient `CADefaultDeviceAggregate-*`/aggregate-transport devices filtered
+    from the output list (verified via probe).
+  - Focus rings removed from the power button, view switcher, and tray menus.
+  - Tests: 65/65 pass (SpectrumBars band count, silence start, 1 kHz tone lights only its
+    band region, peakLevel consistency, reset).
+- 2026-09-24 — **Custom preset UX in Pro mode + export/import.** Preset bar (picker +
+  modified-aware Save button + Overwrite/Undo/Delete/Export/Import menu) added to the top of
+  Pro view; `PresetStore.importPreset(from:)` assigns fresh IDs and uniques names on
+  collision; presets export/import as JSON via the standard save/open panels
+  (`PresetDocument: FileDocument`). Storage decision recorded: **JSON file-per-preset in
+  Application Support, not SQLite** — presets are tiny documents with no query needs; files
+  are portable, syncable, and match FxSound's own per-preset model. Tests: 69/69 pass
+  (added import round-trip + name-uniquing checks).
+- 2026-09-24 — **Custom preset model (user proposal, implemented).** First edit away
+  from a built-in now detaches into a rolling scratch preset named **Custom** — the picker
+  label switches from e.g. "Bass Boost" to "Custom" so factory presets are never touched
+  and never even appear modified. The scratch auto-saves (persists across launches, always
+  available), **Save As New Preset…** names it properly, **Delete Preset** removes it.
+  Supersedes the built-in-override mechanism (removed, incl. legacy folder cleanup).
+  Pro mode gained a preset bar; preset export/import as shareable JSON files added
+  (storage best practice: JSON file-per-preset in Application Support — no SQLite).
+  New CLI parity flags: `--preset=<name>`, `--set-band-gain=<index>:<dB>`. Verified at
+  runtime: launch with `--preset="Bass Boost" --set-band-gain=0:6` → label switches to
+  Custom with +6 dB on 62 Hz; quit+relaunch restores Custom exactly; built-ins stay
+  factory. Tests: 70/70 pass.
+- 2026-09-24 — **Settings & background activity (user request).** New **Permissions** tab
+  (first in Settings): live system-audio-access badge driven by the engine self-test, plus
+  one-click **Enable / Re-check** (starts the chain, which triggers the macOS consent prompt
+  if needed) and an Open System Settings deep link. Background activity: App Nap prevention
+  via `ProcessInfo.beginActivity(.userInitiated)` while the chain runs (status shown in
+  Settings); launch-at-login and start-with-power-on already present. About tab now credits
+  **Developed by Ali (ali@aliahad.com)** with a mailto button and a GitHub repo link.
+  Settings reachable from the tray menu ("Settings…" → `openWindow`); widened to keep all
+  5 tabs inline. Verified by live screenshots (Permissions + About tabs).
+- 2026-09-24 — **Audit-v2 fixes applied (all findings from the second audit).**
+  - IOProc frames now divide by the tap ASBD's authoritative `mBytesPerFrame`
+    (`SystemTap.bytesPerFrame`, passed through `AggregateEngine.start`) — no layout
+    guessing; verified 48.3 k fps capture after the change.
+  - Single-instance enforcement: a second launch activates the running instance and
+    exits (`NSRunningApplication` check in `fxsoundApp.init`).
+  - Windows given distinct titles ("FxSound" / "Settings") — the tray "Open FxSound"
+    fallback can no longer raise the Settings window.
+  - Visualizer timeline no longer pauses when power is off, so sticks always redraw
+    to the baseline instead of freezing.
+  - Dead `PermissionState.denied` case removed (deny surfaces via the self-test
+    heuristic); dead `SpectrumBars.reset()`, `PresetStore.removeCustomScratch()`, and
+    `RingBuffer.read(into:)` removed; `--power=0` CLI flag added (verified stays off).
+  - Regression pass: 70/70 logic checks, Debug + Release builds clean, live chain
+    started and SIGTERM teardown logged.
+- 2026-09-24 — **Accent rebrand: red → golden (user request).** `FxTheme` accent,
+  card borders, bar gradient, peak caps and the app `AccentColor` asset moved to the
+  golden family (accent #FFC214); app icon regenerated with golden sliders/glow.
+  Semantic error-reds in Settings kept. Tray glyph is a template image — macOS tints it
+  automatically. Verified by live screenshots (Lite view + icon preview); 70/70 checks
+  still green.
+- 2026-09-24 — **Full rebrand: FxSound → Sovate (user request).** Project, target, bundle id
+  (`com.aliahad.sovate`), source folder, aggregate device name/UID, log subsystem, App Support
+  folder, UI strings, tray menu, About credits, scripts, README and this plan's header all
+  renamed. Upstream attribution to the FxSound project kept in About/README. Historical log
+  entries below keep their original FxSound naming (they are a record, not the current brand).
+  GitHub repo renamed to `aliahadmd/sovate-mac` (old URLs redirect).
+- 2026-09-24 — **About tab de-attributed (user request).** Removed the FxSound
+  mention and AGPL note from Settings → About; replaced with a neutral local-processing
+  line. No FxSound code was ever copied (preset parameters are unprotectable data), so
+  the credit was optional. Remaining FxSound mentions live only in the private plan
+  history, README attribution, and one code comment.
 - 2026-09-24 — **Remaining manual gates require external resources:**
   - **Notarization** — requires Developer ID Application credentials (paid Apple Developer
     Program) and notarytool keychain profile; this machine has 0 Developer ID identities.

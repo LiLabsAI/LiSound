@@ -1,9 +1,9 @@
 #!/bin/zsh
-# FxSound for Mac — release build + optional DMG packaging (plan9 §4).
+# Sovate — release build + optional DMG packaging (plan9 §4).
 #
 # Usage:
 #   Scripts/build_release.sh            # build Release into ./build/
-#   Scripts/build_release.sh --dmg      # also produce ./build/FxSound.dmg
+#   Scripts/build_release.sh --dmg      # also produce ./build/Sovate.dmg
 #   Scripts/build_release.sh --sign     # sign with Developer ID (needs signing setup in project)
 #   Scripts/build_release.sh --notarize # staple notarization (requires Apple ID credentials configured)
 #
@@ -26,10 +26,10 @@ for arg in "$@"; do
 done
 
 echo "==> Building $CONFIG"
-xcodebuild -project fxsound.xcodeproj -scheme fxsound -configuration "$CONFIG" \
+xcodebuild -project sovate.xcodeproj -scheme sovate -configuration "$CONFIG" \
   -derivedDataPath "$BUILD_DIR/derived" build
 
-APP="$BUILD_DIR/derived/Build/Products/$CONFIG/fxsound.app"
+APP="$BUILD_DIR/derived/Build/Products/$CONFIG/sovate.app"
 test -d "$APP" || { echo "app missing at $APP"; exit 1; }
 
 if $SIGN; then
@@ -40,9 +40,9 @@ fi
 
 if $NOTARIZE; then
   echo "==> Notarizing (requires notarytool credentials stored: xcrun notarytool store-credentials)"
-  ZIP="$BUILD_DIR/fxsound.zip"
+  ZIP="$BUILD_DIR/sovate.zip"
   ditto -c -k --keepParent "$APP" "$ZIP"
-  xcrun notarytool submit "$ZIP" --keychain-profile "fxsound-notary" --wait
+  xcrun notarytool submit "$ZIP" --keychain-profile "sovate-notary" --wait
   xcrun stapler staple "$APP"
   xcrun stapler validate "$APP"
 fi
@@ -53,8 +53,8 @@ if $DMG; then
   rm -rf "$STAGE"; mkdir -p "$STAGE"
   cp -R "$APP" "$STAGE/"
   ln -sf /Applications "$STAGE/Applications"
-  rm -f "$BUILD_DIR/FxSound.dmg"
-  hdiutil create -volname "FxSound" -srcfolder "$STAGE" -ov -format UDZO "$BUILD_DIR/FxSound.dmg"
+  rm -f "$BUILD_DIR/Sovate.dmg"
+  hdiutil create -volname "Sovate" -srcfolder "$STAGE" -ov -format UDZO "$BUILD_DIR/Sovate.dmg"
 fi
 
 echo "==> Done: $APP"

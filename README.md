@@ -1,8 +1,9 @@
-# FxSound for Mac
+# Sovate
 
 A system-wide audio equalizer and volume booster for macOS (Apple Silicon), modeled on the
 open-source [FxSound](https://github.com/fxsound2/fxsound-app) app for Windows. Written from
-scratch in Swift/SwiftUI — preset *data* is ported from FxSound (AGPL v3), no FxSound code.
+scratch in Swift/SwiftUI under the **Sovate** brand — preset *data* is ported from FxSound
+(AGPL v3), no FxSound code.
 
 ## How it works
 
@@ -43,10 +44,10 @@ Power off destroys the tap and normal system audio resumes instantly.
 ## Build & run
 
 ```bash
-open fxsound.xcodeproj          # ⌘R in Xcode
+open sovate.xcodeproj          # ⌘R in Xcode
 # or:
 Scripts/build_release.sh        # Release build
-Scripts/build_release.sh --dmg  # + DMG at build/FxSound.dmg
+Scripts/build_release.sh --dmg  # + DMG at build/Sovate.dmg
 ```
 
 Logic tests (no audio hardware needed):
@@ -58,11 +59,11 @@ Tests/run_logic_tests.sh        # 46 checks; exits non-zero on failure
 ## Project layout
 
 - `plan/` — research and implementation plans (plan1–plan9) with status log
-- `fxsound/Audio/` — tap, aggregate device, ring buffer, DSP engine, device manager
-- `fxsound/Presets/` — preset model/store + built-in preset data (generated from FxSound `.fac`)
-- `fxsound/Core/` — app state, controller, settings
-- `fxsound/App/` — SwiftUI views (Lite/Pro, menu bar, settings)
-- `fxsound/Platform/` — hotkeys, login item, permissions
+- `sovate/Audio/` — tap, aggregate device, ring buffer, DSP engine, device manager
+- `sovate/Presets/` — preset model/store + built-in preset data (generated from FxSound `.fac`)
+- `sovate/Core/` — app state, controller, settings
+- `sovate/App/` — SwiftUI views (Lite/Pro, menu bar, settings)
+- `sovate/Platform/` — hotkeys, login item, permissions
 - `Tests/LogicTests/` — standalone logic test harness
 
 ## Known limitations
@@ -70,3 +71,7 @@ Tests/run_logic_tests.sh        # 46 checks; exits non-zero on failure
 - DRM-protected content (e.g. some Apple TV/streaming apps) may bypass or mute through taps.
 - Adding/removing `NSAudioCaptureUsageDescription` from Info.plist silently disables capture
   (taps return zeros) — the app detects this and shows guidance.
+
+## Developer
+
+Developed by Ali — [ali@aliahad.com](mailto:ali@aliahad.com).

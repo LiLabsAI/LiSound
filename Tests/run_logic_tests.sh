@@ -7,19 +7,19 @@ SDK=$(xcrun --show-sdk-path)
 
 swiftc -O -sdk "$SDK" -target arm64-apple-macos15.0 \
   Tests/LogicTests/main.swift \
-  fxsound/Audio/AudioChainError.swift \
-  fxsound/Audio/RingBuffer.swift \
-  fxsound/Audio/EQParameters.swift \
-  fxsound/Audio/RenderDSP.swift \
-  fxsound/Audio/SpectrumAnalyzer.swift \
-  fxsound/Audio/DeviceManager.swift \
-  fxsound/Audio/AggregateEngine.swift \
-  fxsound/Presets/Preset.swift \
-  fxsound/Presets/PresetStore.swift \
-  fxsound/Presets/BuiltInPresets.swift \
-  fxsound/Core/SettingsStore.swift \
-  fxsound/Core/AppState.swift \
-  fxsound/Platform/Permissions.swift \
+  sovate/Audio/AudioChainError.swift \
+  sovate/Audio/RingBuffer.swift \
+  sovate/Audio/EQParameters.swift \
+  sovate/Audio/RenderDSP.swift \
+  sovate/Audio/SpectrumBars.swift \
+  sovate/Audio/DeviceManager.swift \
+  sovate/Audio/AggregateEngine.swift \
+  sovate/Presets/Preset.swift \
+  sovate/Presets/PresetStore.swift \
+  sovate/Presets/BuiltInPresets.swift \
+  sovate/Core/SettingsStore.swift \
+  sovate/Core/AppState.swift \
+  sovate/Platform/Permissions.swift \
   -o build/logic-tests
 
 build/logic-tests
