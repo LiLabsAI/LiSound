@@ -1,10 +1,14 @@
-# Sovate
+<p align="center">
+  <img src="Brand/LiSound-banner.png" alt="LiSound" width="680" />
+</p>
+
+# LiSound
 
 A system-wide audio equalizer and volume booster for macOS (Apple Silicon).
 Written from scratch in Swift/SwiftUI — pure black & golden UI, real-time DSP, no drivers
 to install.
 
-Sovate lives in your menu bar, processes **all** system audio in real time, and renders it
+LiSound lives in your menu bar, processes **all** system audio in real time, and renders it
 to whatever output device you choose — with a pure black/golden UI.
 
 ## How it works
@@ -48,22 +52,23 @@ Power off destroys the tap and normal system audio resumes instantly.
 ## Requirements
 
 - macOS 15.0+, Apple Silicon
-- Audio Recording permission — Sovate prompts on first power-on, or enable it from
+- Audio Recording permission — LiSound prompts on first power-on, or enable it from
   **Settings → Permissions** with one click
 
 ## Build & run
 
 ```bash
-open sovate.xcodeproj          # ⌘R in Xcode
+open LiSound.xcodeproj               # ⌘R in Xcode
 # or:
-Scripts/build_release.sh        # Release build
-Scripts/build_release.sh --dmg  # + DMG at build/Sovate.dmg
+Scripts/build_release.sh             # Release build
+Scripts/build_release.sh --dmg       # + DMG at build/LiSound.dmg
+Scripts/build_release.sh --adhoc --dmg # Ad-hoc signed Release + DMG
 ```
 
 Logic tests (no audio hardware needed):
 
 ```bash
-Tests/run_logic_tests.sh        # 70 checks; exits non-zero on failure
+Tests/run_logic_tests.sh        # exits non-zero on failure
 ```
 
 ## CLI flags
@@ -78,18 +83,19 @@ Tests/run_logic_tests.sh        # 70 checks; exits non-zero on failure
 ## Project layout
 
 - `plan/` — research and implementation plans (plan1–plan9) with status log
-- `sovate/Audio/` — tap, aggregate device, ring buffer, spectrum analyzer, DSP engine, device manager
-- `sovate/Presets/` — preset model/store + built-in preset data
-- `sovate/Core/` — app state, controller, settings
-- `sovate/App/` — SwiftUI views (Lite/Pro, menu bar, settings, theme)
-- `sovate/Platform/` — hotkeys, login item, permissions
+- `LiSound/Audio/` — tap, aggregate device, ring buffer, spectrum analyzer, DSP engine, device manager
+- `LiSound/Presets/` — preset model/store + built-in preset data
+- `LiSound/Core/` — app state, controller, settings
+- `LiSound/App/` — SwiftUI views (Lite/Pro, menu bar, settings, theme, vector logo)
+- `LiSound/Platform/` — hotkeys, login item, permissions
+- `Brand/` — standalone vector & high-res LiSound logo, icon, and banner assets
 - `Tests/LogicTests/` + `Tests/run_logic_tests.sh` — standalone logic test harness
 
 ## Troubleshooting
 
 - **No effect / visualizer flat**: check Settings → Permissions → *System audio access*.
   Use **Enable / Re-check** to run a 6-second self-test; if it fails, open
-  **System Settings → Privacy & Security → Audio Recording** and make sure Sovate is enabled.
+  **System Settings → Privacy & Security → Audio Recording** and make sure LiSound is enabled.
 - If the prompt never appeared (e.g. after removing `NSAudioCaptureUsageDescription`),
   taps return silent audio — the app detects this and shows the same guidance.
 
@@ -97,8 +103,8 @@ Tests/run_logic_tests.sh        # 70 checks; exits non-zero on failure
 
 - DRM-protected content (e.g. some Apple TV/streaming apps) may bypass or mute through taps.
 - Not notarized — first launch needs right-click → Open, or
-  `xattr -d com.apple.quarantine /Applications/sovate.app`.
+  `xattr -d com.apple.quarantine /Applications/LiSound.app`.
 
 ## Developer
 
-Developed by Ali — [ali@aliahad.com](mailto:ali@aliahad.com).
+Developed by Ali — [ali@aliahad.com](mailto:ali@aliahad.com) · [github.com/LiLabsAI/LiSound](https://github.com/LiLabsAI/LiSound).

@@ -1,9 +1,10 @@
 #!/bin/zsh
-# Sovate — release build + optional DMG packaging (plan9 §4).
+# LiSound — release build + optional DMG packaging (plan9 §4).
 #
 # Usage:
 #   Scripts/build_release.sh            # build Release into ./build/
-#   Scripts/build_release.sh --dmg      # also produce ./build/Sovate.dmg
+#   Scripts/build_release.sh --dmg      # also produce ./build/LiSound.dmg
+#   Scripts/build_release.sh --adhoc    # build + ad-hoc sign with entitlements (no Apple cert needed)
 #   Scripts/build_release.sh --sign     # sign with Developer ID (needs signing setup in project)
 #   Scripts/build_release.sh --notarize # staple notarization (requires Apple ID credentials configured)
 #
@@ -13,12 +14,14 @@ cd "$(dirname "$0")/.."
 BUILD_DIR="build"
 CONFIG="Release"
 DMG=false
+ADHOC=false
 SIGN=false
 NOTARIZE=false
 
 for arg in "$@"; do
   case "$arg" in
     --dmg) DMG=true ;;
+    --adhoc) ADHOC=true ;;
     --sign) SIGN=true ;;
     --notarize) NOTARIZE=true; SIGN=true ;;
     *) echo "unknown option: $arg"; exit 1 ;;
@@ -26,23 +29,31 @@ for arg in "$@"; do
 done
 
 echo "==> Building $CONFIG"
-xcodebuild -project sovate.xcodeproj -scheme sovate -configuration "$CONFIG" \
-  -derivedDataPath "$BUILD_DIR/derived" build
+XCODE_SIGN_ARGS=()
+if $ADHOC && ! $SIGN; then
+  XCODE_SIGN_ARGS=(CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO)
+fi
+xcodebuild -project LiSound.xcodeproj -scheme LiSound -configuration "$CONFIG" \
+  -derivedDataPath "$BUILD_DIR/derived" "${XCODE_SIGN_ARGS[@]}" build
 
-APP="$BUILD_DIR/derived/Build/Products/$CONFIG/sovate.app"
+APP="$BUILD_DIR/derived/Build/Products/$CONFIG/LiSound.app"
 test -d "$APP" || { echo "app missing at $APP"; exit 1; }
 
 if $SIGN; then
   echo "==> Signing with Developer ID"
   codesign --force --deep --sign "Developer ID Application" "$APP"
   codesign --verify --strict --verbose=2 "$APP"
+elif $ADHOC; then
+  echo "==> Ad-hoc signing with entitlements"
+  codesign --force --deep --sign - --entitlements LiSound/LiSound.entitlements "$APP"
+  codesign --verify --deep --strict --verbose=2 "$APP"
 fi
 
 if $NOTARIZE; then
   echo "==> Notarizing (requires notarytool credentials stored: xcrun notarytool store-credentials)"
-  ZIP="$BUILD_DIR/sovate.zip"
+  ZIP="$BUILD_DIR/LiSound.zip"
   ditto -c -k --keepParent "$APP" "$ZIP"
-  xcrun notarytool submit "$ZIP" --keychain-profile "sovate-notary" --wait
+  xcrun notarytool submit "$ZIP" --keychain-profile "lisound-notary" --wait
   xcrun stapler staple "$APP"
   xcrun stapler validate "$APP"
 fi
@@ -53,8 +64,8 @@ if $DMG; then
   rm -rf "$STAGE"; mkdir -p "$STAGE"
   cp -R "$APP" "$STAGE/"
   ln -sf /Applications "$STAGE/Applications"
-  rm -f "$BUILD_DIR/Sovate.dmg"
-  hdiutil create -volname "Sovate" -srcfolder "$STAGE" -ov -format UDZO "$BUILD_DIR/Sovate.dmg"
+  rm -f "$BUILD_DIR/LiSound.dmg"
+  hdiutil create -volname "LiSound" -srcfolder "$STAGE" -ov -format UDZO "$BUILD_DIR/LiSound.dmg"
 fi
 
 echo "==> Done: $APP"

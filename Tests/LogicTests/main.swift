@@ -1,7 +1,7 @@
 import Foundation
 import CoreAudio
 
-// Logic test harness for FxSound for Mac (plan9 §5 — unit gates).
+// Logic test harness for LiSound for Mac (plan9 §5 — unit gates).
 // Compiled against the app's non-UI source files with swiftc; exits non-zero on failure.
 
 var failures = 0
@@ -151,7 +151,7 @@ func testPresets() {
 
         // store round-trip in temp dir
         let temp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("fxsound-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("lisound-tests-\(UUID().uuidString)", isDirectory: true)
         let store = PresetStore(directoryOverride: temp)
         check(store.builtIns.count == 13, "store loads built-ins")
         check(store.isNameValid("My Rock Preset"), "name validation accepts new name")
@@ -199,7 +199,7 @@ func testAuditFixes() {
 
         // Custom scratch lifecycle: edits detach into one rolling "Custom" slot
         let temp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("fxsound-custom-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("lisound-custom-\(UUID().uuidString)", isDirectory: true)
         let store = PresetStore(directoryOverride: temp)
         let music = store.builtIns.first { $0.name == "Music" }!
         let custom1 = store.createOrResetCustom(values: music)
@@ -229,6 +229,24 @@ func testAuditFixes() {
         let afterImport = PresetStore(directoryOverride: temp)
         check(afterImport.userPresets.contains { $0.name == "Music 2" && $0.effects.bass == 8 },
               "imported preset persists to disk")
+
+        // legacy Sovate -> LiSound preset migration on first launch
+        let legacyDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lisound-legacy-\(UUID().uuidString)", isDirectory: true)
+        let migratedDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lisound-migrated-\(UUID().uuidString)", isDirectory: true)
+        let legacyStore = PresetStore(directoryOverride: legacyDir)
+        let legacyPreset = Preset(name: "Legacy Warmth", isBuiltIn: false, effects: EffectValues(bass: 7))
+        legacyStore.addOrUpdateUserPreset(legacyPreset)
+        let migratedStore = PresetStore(directoryOverride: migratedDir, legacyDirectoryOverride: legacyDir)
+        check(migratedStore.userPresets.contains { $0.name == "Legacy Warmth" && $0.effects.bass == 7 },
+              "migrates legacy user presets when target directory does not exist yet")
+        migratedStore.deleteUserPreset(id: legacyPreset.id)
+        let secondLaunch = PresetStore(directoryOverride: migratedDir, legacyDirectoryOverride: legacyDir)
+        check(!secondLaunch.userPresets.contains { $0.id == legacyPreset.id },
+              "does not re-import deleted legacy presets once target directory exists")
+        try? FileManager.default.removeItem(at: legacyDir)
+        try? FileManager.default.removeItem(at: migratedDir)
         try? FileManager.default.removeItem(at: temp)
     }
 }
@@ -275,7 +293,7 @@ func testSpectrumBars() {
 func testSettings() {
     print("SettingsStore")
     MainActor.assumeIsolated {
-        let suite = "fxsound-tests-\(UUID().uuidString)"
+        let suite = "lisound-tests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         let store = SettingsStore(defaults: defaults)
         check(store.settings.combo(for: .power).keyCode == 35, "default power hotkey keyCode")
