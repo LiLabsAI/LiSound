@@ -105,6 +105,16 @@ Tests/run_logic_tests.sh        # exits non-zero on failure
 - Not notarized — first launch needs right-click → Open, or
   `xattr -d com.apple.quarantine /Applications/LiSound.app`.
 
+## Contributing
+
+Contributions, bug reports, forks, and pull requests are welcome on [GitHub](https://github.com/LiLabsAI/LiSound). Before submitting changes, please run `Tests/run_logic_tests.sh` to verify all checks pass.
+
+## License
+
+Copyright © 2026 **Ali Ahad (LI Labs)**.
+
+LiSound is free software licensed under the **GNU General Public License v3.0 ([GPLv3](LICENSE))**. You are free to study, modify, fork, and redistribute the source code or builds under the same GPLv3 terms — distributed modifications and derivatives must also remain open source under GPLv3 with copyright attribution preserved, and may not be incorporated into proprietary or closed-source distributions. Distributed in the hope that it will be useful, **without any warranty**. See [LICENSE](LICENSE) for full terms.
+
 ## Developer
 
-Developed by Ali — [ali@aliahad.com](mailto:ali@aliahad.com) · [github.com/LiLabsAI/LiSound](https://github.com/LiLabsAI/LiSound).
+Developed by Ali Ahad — [ali@aliahad.com](mailto:ali@aliahad.com) · [github.com/LiLabsAI/LiSound](https://github.com/LiLabsAI/LiSound).

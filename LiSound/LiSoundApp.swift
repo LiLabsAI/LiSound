@@ -2,6 +2,9 @@
 //  LiSoundApp.swift
 //  LiSound
 //
+//  Copyright (C) 2026 Ali Ahad (LI Labs)
+//  Licensed under the GNU General Public License v3.0 (GPLv3). See LICENSE.
+//
 
 import SwiftUI
 

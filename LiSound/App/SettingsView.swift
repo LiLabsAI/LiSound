@@ -228,9 +228,22 @@ private struct AboutSettingsTab: View {
             } label: {
                 Text("Source").foregroundStyle(.secondary)
             }
+            LabeledContent {
+                Button("GNU GPLv3") {
+                    if let url = URL(string: "https://github.com/LiLabsAI/LiSound/blob/main/LICENSE") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+            } label: {
+                Text("License").foregroundStyle(.secondary)
+            }
             Divider()
             Text("A system-wide equalizer and volume booster. All audio processing happens locally on this device.")
                 .font(.callout)
+                .foregroundStyle(.secondary)
+            Text("Copyright © 2026 Ali Ahad (LI Labs). Distributed without warranty under the GNU General Public License v3.0.")
+                .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
         }
